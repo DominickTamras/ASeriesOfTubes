@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" type="text/css" href="assets/windows95/win95.css">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald&family=Saira+Condensed:wght@300&display=swap" rel="stylesheet">
+  <title>A SERIES OF TUBEZ</title>
+  <style>
+     body {
+      margin: 0;
+      overflow-y: scroll;
+      background: black;
+    }  
+ 
+   canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+	#screenText {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #00ffff; /* Cyan text */
+    font-size: 24px;
+    font-family: Arial, sans-serif;
+    z-index: 10;
+  }
+  </style>
+
+</head>
+<body class="windows-scrollbar">
+	<h1 id="select">A SERIES OF TUBEZ</h1>
+	<h2 id="body">A Blogsite by Dominick Tamras</h1>
+		  <div class="container">
+        <div class="row mb-5">
+            <div class="col-md-8 text-center">
+            </div>
+            <div class="col-md-4 my-auto">
+                <div class="card square mb-3">
+                    <div class="card-header">
+                        <h4 class="my-0 font-weight-normal">Check out topics</h4>
+                    </div>
+					<div class="card-body" style="padding: 20px;">
+					<ul class="list-unstyled mt-3 mb-4">
+						<li style="margin-bottom: 10px;">
+						<a href="personal_page.html" class="btn btn-lg btn-block"> <img src="assets\windows95\icons\joystick-3.png" class="icon-16"> Video Games (Coming Soon!)</a>
+						</li>
+						<li style="margin-bottom: 10px;">
+						<a href="personal_page.html" class="btn btn-lg btn-block"><img src="assets\windows95\icons\desktop-5.png" class="icon-16"> Anime/Manga</a>
+						</li>
+						<li style="margin-bottom: 10px;">
+						<a href="personal_page.html" class="btn btn-lg btn-block"> <img src="assets\windows95\icons\address_book-0.png" class="icon-16" style="margin-right: 3px;">Books (Coming Soon!)</a>
+						</li>
+						<li style="margin-bottom: 10px;">
+						<a href="personal_page.html" class="btn btn-lg btn-block"> <img src="assets\windows95\icons\movie_maker-1.png" class="icon-16" style="margin-right: 4px;">Movies! (Coming Soon!)</a>
+						</li>
+					</ul>
+					</div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="card square mb-3" style="margin-left: 50px; margin-top: 350px;">
+                <div class="card-header">
+                    <h4 class="my-0 font-weight-normal">Credits</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mt-3 mb-4">
+                        Win95 style created by AlexBSoft
+                    </ul>
+                </div>
+            </div>
+		
+<script type="module"> // A series of tubes
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 0, 13);
+  camera.rotation.y = THREE.MathUtils.degToRad(-25);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // Environment map for reflections
+  const path = 'https://threejs.org/examples/textures/cube/Bridge2/';
+  const format = '.jpg';
+  const urls = [
+    path + 'posx' + format, path + 'negx' + format,
+    path + 'posy' + format, path + 'negy' + format,
+    path + 'posz' + format, path + 'negz' + format
+  ];
+  const cubeTextureLoader = new THREE.CubeTextureLoader();
+  const envMap = cubeTextureLoader.load(urls);
+  scene.environment = envMap;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const pointLight = new THREE.PointLight(0xffffff, 1.7);
+  pointLight.position.set(10, 20, 20);
+  scene.add(pointLight);
+
+  // Larger cube bounding box for more ground coverage
+  const cubeSize = 14;
+  const cubeMin = new THREE.Vector3(-cubeSize/2, -cubeSize/2, -cubeSize/2);
+  const cubeMax = new THREE.Vector3(cubeSize/2, cubeSize/2, cubeSize/2 + 5);
+
+  const MIN_DISTANCE = 2.5; // Increased spacing to reduce clipping
+  let allPoints = [];
+
+  function isInsideCube(point) {
+    return (
+      point.x >= cubeMin.x && point.x <= cubeMax.x &&
+      point.y >= cubeMin.y && point.y <= cubeMax.y &&
+      point.z >= cubeMin.z && point.z <= cubeMax.z
+    );
+  }
+
+  function isTooClose(point) {
+    for (const p of allPoints) {
+      if (point.distanceTo(p) < MIN_DISTANCE) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const rectangleDirections = [
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, 0, 1),
+    new THREE.Vector3(0, 0, -1),
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(0, -1, 0)
+  ];
+
+  class Pipe {
+    constructor(startPos = new THREE.Vector3(0, 0, 0)) {
+      this.path = new THREE.CurvePath();
+      this.position = startPos.clone();
+      this.geometrySegments = 12;
+      this.radius = 0.25;
+      this.segments = [];
+      this.maxSegments = 40 + Math.floor(Math.random() * 30);
+      this.age = 0;
+      this.spawned = false;
+      this.lifespan = 60 * 5; // 5 seconds build time
+
+      this.segmentCooldown = 6;
+      this.segmentTimer = 0;
+
+      this.material = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+        roughness: 2,
+        metalness: 1.0,
+        clearcoat: 0,
+        clearcoatRoughness: 0.1,
+        envMap: envMap,
+        envMapIntensity: 1.0,
+        reflectivity: 1.0,
+      });
+
+      this.mesh = new THREE.Mesh(new THREE.BufferGeometry(), this.material);
+      scene.add(this.mesh);
+
+      for (let i = 0; i < 5; i++) {
+        this.addSegment(true);
+      }
+    }
+
+    addSegment(initial = false) {
+      const segmentLength = 3.5; // longer segments for more coverage
+      let tries = 0;
+      const maxTries = 40;
+      let newDir, nextPoint;
+
+      do {
+        const dirIndex = Math.floor(Math.random() * rectangleDirections.length);
+        newDir = rectangleDirections[dirIndex].clone();
+
+        if (this.segments.length > 0) {
+          const lastDir = this.segments[this.segments.length - 1].v2.clone().sub(this.segments[this.segments.length - 1].v1).normalize();
+          if (newDir.dot(lastDir) < -0.9) {
+            tries++;
+            continue; // Avoid reversing
+          }
+        }
+
+        nextPoint = this.position.clone().add(newDir.multiplyScalar(segmentLength));
+
+        if (
+          (initial || !isTooClose(nextPoint)) &&
+          isInsideCube(nextPoint)
+        ) {
+          const line = new THREE.LineCurve3(this.position.clone(), nextPoint.clone());
+          this.path.add(line);
+          this.segments.push(line);
+          this.position.copy(nextPoint);
+          allPoints.push(nextPoint.clone());
+          return true;
+        }
+        tries++;
+      } while (tries < maxTries);
+
+      return false;
+    }
+
+    addOffscreenSegment() {
+      const segmentLength = 20;
+      const dirIndex = Math.floor(Math.random() * rectangleDirections.length);
+      const newDir = rectangleDirections[dirIndex].clone();
+
+      const nextPoint = this.position.clone().add(newDir.multiplyScalar(segmentLength));
+      const line = new THREE.LineCurve3(this.position.clone(), nextPoint.clone());
+      this.path.add(line);
+      this.segments.push(line);
+      this.position.copy(nextPoint);
+      allPoints.push(nextPoint.clone());
+    }
+
+    update(index, isLastPipe) {
+      this.age++;
+
+      if (this.age > this.lifespan) {
+        return;
+      }
+
+      if (this.segments.length < this.maxSegments) {
+        this.segmentTimer++;
+        if (this.segmentTimer >= this.segmentCooldown) {
+          if (this.addSegment()) {
+            this.segmentTimer = 0;
+          }
+        }
+      } else if (!this.spawned) {
+        this.spawned = true;
+        if (isLastPipe) {
+          this.addOffscreenSegment();
+        }
+      }
+
+      this.mesh.geometry.dispose();
+      this.mesh.geometry = new THREE.TubeGeometry(this.path, this.segments.length * 10, this.radius, this.geometrySegments, false);
+      this.mesh.geometry.computeVertexNormals();
+    }
+  }
+
+  const startPositions = [
+    new THREE.Vector3(-6, 0, 4),
+    new THREE.Vector3(-3, 0, 2),
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(3, 0, -2),
+    new THREE.Vector3(6, 0, -4),
+  ];
+
+  let pipes = startPositions.map(pos => new Pipe(pos));
+
+  let frameCount = 0;
+  const buildDuration = 60 * 5;
+  const lingerDuration = 60 * 4;
+  let isBuilding = true;
+
+  function resetScene() {
+    pipes.forEach(pipe => {
+      scene.remove(pipe.mesh);
+      pipe.mesh.geometry.dispose();
+    });
+    pipes = startPositions.map(pos => new Pipe(pos));
+    allPoints = [];
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    frameCount++;
+
+    if (isBuilding) {
+      for (let i = pipes.length - 1; i >= 0; i--) {
+        pipes[i].update(i, i === pipes.length - 1);
+      }
+      if (frameCount > buildDuration) {
+        isBuilding = false;
+        frameCount = 0;
+      }
+    } else {
+      if (frameCount > lingerDuration) {
+        resetScene();
+        isBuilding = true;
+        frameCount = 0;
+      }
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+</script>
+</body>
+</html>
+
+
